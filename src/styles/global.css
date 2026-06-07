@@ -1,0 +1,326 @@
+/* ============ CSS Variables & Theme ============ */
+:root {
+  --cream: #fef9f4;
+  --pink-light: #fce4ec;
+  --pink: #f8bbd0;
+  --pink-soft: #f48fb1;
+  --purple-light: #f3e5f5;
+  --purple-soft: #ce93d8;
+  --purple: #ab47bc;
+  --white: #ffffff;
+  --text-primary: #4a4458;
+  --text-secondary: #7b6f8a;
+  --text-light: #b39ddb;
+  --shadow-soft: 0 2px 16px rgba(171, 71, 188, 0.08);
+  --shadow-medium: 0 4px 24px rgba(171, 71, 188, 0.12);
+  --shadow-strong: 0 8px 40px rgba(171, 71, 188, 0.18);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============ Reset & Base ============ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+  background: var(--cream);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ============ Breathing Background Animation ============ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(252, 228, 236, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(243, 229, 245, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(252, 228, 236, 0.3) 0%, transparent 50%);
+  animation: breathGradient 8s ease-in-out infinite;
+}
+
+@keyframes breathGradient {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ============ Scrollbar ============ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pink);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pink-soft);
+}
+
+/* ============ Page Container ============ */
+.page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 24px 100px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============ Card ============ */
+.card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(252, 228, 236, 0.6);
+  transition: all var(--transition-medium);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+/* ============ Buttons ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 50px;
+  border: none;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-medium);
+  outline: none;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f8bbd0 0%, #ce93d8 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(206, 147, 216, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 24px rgba(206, 147, 216, 0.45);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(206, 147, 216, 0.3);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
+  border: 1px solid rgba(206, 147, 216, 0.3);
+}
+
+.btn-ghost:hover {
+  background: rgba(252, 228, 236, 0.5);
+  border-color: var(--pink);
+  color: var(--purple);
+}
+
+.btn-sm {
+  padding: 8px 18px;
+  font-size: 0.85rem;
+}
+
+/* ============ Input / Textarea ============ */
+.input, .textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(206, 147, 216, 0.25);
+  background: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  transition: all var(--transition-medium);
+  outline: none;
+  resize: vertical;
+}
+
+.input:focus, .textarea:focus {
+  border-color: var(--purple-soft);
+  box-shadow: 0 0 0 4px rgba(206, 147, 216, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.input::placeholder, .textarea::placeholder {
+  color: var(--text-light);
+}
+
+/* ============ Page Title ============ */
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  font-weight: 300;
+}
+
+/* ============ Fade-in stagger for cards ============ */
+.stagger-card:nth-child(1) { animation-delay: 0.05s; }
+.stagger-card:nth-child(2) { animation-delay: 0.1s; }
+.stagger-card:nth-child(3) { animation-delay: 0.15s; }
+.stagger-card:nth-child(4) { animation-delay: 0.2s; }
+.stagger-card:nth-child(5) { animation-delay: 0.25s; }
+.stagger-card:nth-child(6) { animation-delay: 0.3s; }
+.stagger-card:nth-child(7) { animation-delay: 0.35s; }
+.stagger-card:nth-child(8) { animation-delay: 0.4s; }
+
+/* ============ Text reveal animation ============ */
+.text-reveal {
+  display: inline-block;
+  animation: textReveal 1.2s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes textReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* ============ Empty State ============ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+}
+
+.empty-state .icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state p {
+  font-size: 0.95rem;
+}
+
+/* ============ Modal / Overlay ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(74, 68, 88, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  box-shadow: var(--shadow-strong);
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ============ Utility ============ */
+.text-center { text-align: center; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-2 { margin-bottom: 16px; }
