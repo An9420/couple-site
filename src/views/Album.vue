@@ -86,7 +86,7 @@
         <!-- Thumbnail or video preview -->
         <div class="card-media-wrap">
           <img
-            :src="item.thumbnail || item.dataUrl"
+            :src="item.data_url"
             :alt="item.note"
             class="photo-img"
             loading="lazy"
@@ -138,7 +138,7 @@
           <!-- Video player -->
           <video
             v-if="previewItem.type === 'video'"
-            :src="previewItem.dataUrl"
+            :src="previewItem.data_url"
             class="preview-video"
             controls
             autoplay
@@ -146,7 +146,7 @@
           <!-- Image -->
           <img
             v-else
-            :src="previewItem.dataUrl"
+            :src="previewItem.data_url"
             class="preview-img"
           />
 
@@ -177,14 +177,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import {
-  getAllMedia,
-  saveMedia,
-  deleteMedia,
-  batchImport,
-  getStorageStats,
-  migrateFromLocalStorage
-} from '../utils/mediaDB'
+import { mediaApi } from '../utils/api.js'
 
 // ============ State ============
 const mediaList = ref([])
@@ -213,64 +206,42 @@ const stats = computed(() => {
   const videos = mediaList.value.filter(m => m.type === 'video').length
   let totalBytes = 0
   for (const m of mediaList.value) {
-    if (m.dataUrl) totalBytes += m.dataUrl.length * 0.75
+    if (m.data_url) totalBytes += (m.data_url?.length || 0) * 0.75
   }
-  return {
-    images,
-    videos,
-    estimatedSizeMB: (totalBytes / (1024 * 1024)).toFixed(1)
-  }
+  return { images, videos, estimatedSizeMB: (totalBytes / (1024 * 1024)).toFixed(1) }
 })
 
 // ============ Init ============
 onMounted(async () => {
-  // Try to migrate old localStorage photos
-  const migrated = await migrateFromLocalStorage()
-  if (migrated > 0) {
-    console.log(`Migrated ${migrated} photos from localStorage to IndexedDB`)
+  try {
+    mediaList.value = await mediaApi.list()
+  } catch (e) {
+    console.warn('加载相册失败:', e.message)
   }
-
-  // Load all media
-  mediaList.value = await getAllMedia()
   loading.value = false
 })
 
-// ============ Gallery Import (bulk from phone gallery) ============
-function triggerGalleryImport() {
-  galleryInputRef.value?.click()
-}
+// ============ Gallery Import ============
+function triggerGalleryImport() { galleryInputRef.value?.click() }
 
 async function onGalleryFilesSelected(e) {
-  const files = Array.from(e.target.files)
+  await uploadFiles(Array.from(e.target.files))
   e.target.value = ''
-  if (!files.length) return
-
-  await startImport(files)
 }
+function triggerSingleUpload() { singleInputRef.value?.click() }
 
-// ============ Single Upload ============
-function triggerSingleUpload() {
-  singleInputRef.value?.click()
-}
-
-function onSingleFilesSelected(e) {
-  const files = Array.from(e.target.files)
+async function onSingleFilesSelected(e) {
+  await uploadFiles(Array.from(e.target.files))
   e.target.value = ''
-  if (!files.length) return
-
-  startImport(files)
 }
 
-// ============ Drag & Drop ============
 function onDrop(e) {
-  const files = Array.from(e.dataTransfer.files).filter(
-    f => f.type.startsWith('image/') || f.type.startsWith('video/')
-  )
-  if (files.length) startImport(files)
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'))
+  if (files.length) uploadFiles(files)
 }
 
-// ============ Import Engine ============
-async function startImport(files) {
+// ============ Upload to Server ============
+async function uploadFiles(files) {
   importing.value = true
   importCurrent.value = 0
   importTotal.value = files.length
@@ -279,26 +250,36 @@ async function startImport(files) {
   importStats.skipped = 0
   importStats.errors = 0
 
-  const result = await batchImport(files, (current, total, fileName, status) => {
-    importCurrent.value = current
-    importTotal.value = total
-    importFileName.value = fileName
-    if (status === 'imported') importStats.imported++
-    else if (status === 'skipped') importStats.skipped++
-    else if (status === 'error') importStats.errors++
-  })
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    importFileName.value = file.name
+    importCurrent.value = i + 1
 
-  // Refresh media list
-  mediaList.value = await getAllMedia()
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('note', '')
+      fd.append('taken_date', new Date().toISOString().slice(0, 10))
+      const uploaded = await mediaApi.upload(fd)
+      mediaList.value.unshift(uploaded)
+      importStats.imported++
+    } catch (e) {
+      console.error('Upload failed:', file.name, e.message)
+      importStats.errors++
+    }
+  }
+
   importing.value = false
 }
 
 // ============ Delete ============
 async function removeMedia(id) {
   if (!confirm('确定要删除吗？')) return
-  await deleteMedia(id)
-  mediaList.value = mediaList.value.filter(m => m.id !== id)
-  if (previewItem.value?.id === id) previewItem.value = null
+  try {
+    await mediaApi.remove(id)
+    mediaList.value = mediaList.value.filter(m => m.id !== id)
+    if (previewItem.value?.id === id) previewItem.value = null
+  } catch (e) { alert('删除失败: ' + e.message) }
 }
 
 // ============ Preview ============
@@ -309,11 +290,12 @@ function openPreview(item) {
 
 async function saveNote() {
   if (!previewItem.value) return
-  previewItem.value.note = editNote.value
-  await saveMedia(previewItem.value)
-  // Update in list
-  const idx = mediaList.value.findIndex(m => m.id === previewItem.value.id)
-  if (idx !== -1) mediaList.value[idx] = { ...previewItem.value }
+  try {
+    const updated = await mediaApi.update(previewItem.value.id, { note: editNote.value })
+    const idx = mediaList.value.findIndex(m => m.id === previewItem.value.id)
+    if (idx !== -1) mediaList.value[idx] = { ...mediaList.value[idx], ...updated }
+    previewItem.value.note = editNote.value
+  } catch (e) { alert('保存失败: ' + e.message) }
 }
 
 // ============ Helpers ============

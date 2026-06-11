@@ -68,7 +68,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getDiaries, saveDiary, deleteDiary } from '../utils/storage'
+import { diaryApi } from '../utils/api.js'
 
 const moods = [
   { emoji: '💕', label: '甜蜜' },
@@ -86,25 +86,33 @@ const newEntry = ref('')
 const pickedMood = ref('💕')
 const starContainerRef = ref(null)
 
-onMounted(() => {
-  diaries.value = getDiaries()
+onMounted(async () => {
+  try {
+    const data = await diaryApi.list()
+    diaries.value = data.items || []
+  } catch (e) { console.warn('加载日记失败') }
 })
 
-function addDiary() {
+async function addDiary() {
   if (!newEntry.value.trim()) return
-  diaries.value = saveDiary({
-    content: newEntry.value.trim().slice(0, 500),
-    mood: pickedMood.value
-  })
-  newEntry.value = ''
-  pickedMood.value = '💕'
-  spawnStars()
+  try {
+    const created = await diaryApi.create({
+      content: newEntry.value.trim().slice(0, 500),
+      mood: pickedMood.value
+    })
+    diaries.value.unshift(created)
+    newEntry.value = ''
+    pickedMood.value = '💕'
+    spawnStars()
+  } catch (e) { alert('保存失败: ' + e.message) }
 }
 
-function removeDiary(id) {
-  if (confirm('确定要删除这篇日记吗？')) {
-    diaries.value = deleteDiary(id)
-  }
+async function removeDiary(id) {
+  if (!confirm('确定要删除这篇日记吗？')) return
+  try {
+    await diaryApi.remove(id)
+    diaries.value = diaries.value.filter(d => d.id !== id)
+  } catch (e) { alert('删除失败: ' + e.message) }
 }
 
 function formatTime(ts) {

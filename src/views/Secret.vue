@@ -54,7 +54,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getSecrets, addSecret } from '../utils/storage'
+import { secretApi } from '../utils/api.js'
 
 const secrets = ref([])
 const currentSecret = ref('')
@@ -64,9 +64,13 @@ const petalCanvasRef = ref(null)
 let animFrame = null
 let petals = []
 
-onMounted(() => {
-  secrets.value = getSecrets()
-  currentSecret.value = secrets.value[Math.floor(Math.random() * secrets.value.length)] || '你是我的全世界 💕'
+onMounted(async () => {
+  try {
+    secrets.value = await secretApi.list()
+    currentSecret.value = secrets.value.length
+      ? secrets.value[Math.floor(Math.random() * secrets.value.length)]
+      : '你是我的全世界 💕'
+  } catch (e) { console.warn('加载失败') }
   initPetals()
 })
 
@@ -82,11 +86,14 @@ function nextSecret() {
   currentSecret.value = newS
 }
 
-function addNewSecret() {
+async function addNewSecret() {
   if (!newSecret.value.trim()) return
-  secrets.value = addSecret(newSecret.value.trim().slice(0, 200))
-  currentSecret.value = newSecret.value.trim()
-  newSecret.value = ''
+  try {
+    await secretApi.create(newSecret.value.trim().slice(0, 200))
+    secrets.value = await secretApi.list()
+    currentSecret.value = newSecret.value.trim()
+    newSecret.value = ''
+  } catch (e) { alert('添加失败: ' + e.message) }
 }
 
 function scrollToTop() {

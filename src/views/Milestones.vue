@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getMilestones, saveMilestone, deleteMilestone } from '../utils/storage'
+import { milestoneApi } from '../utils/api.js'
 
 const milestones = ref([])
 const newTitle = ref('')
@@ -66,8 +66,8 @@ const newIcon = ref('🎯')
 const now = ref(Date.now())
 let timer = null
 
-onMounted(() => {
-  milestones.value = getMilestones()
+onMounted(async () => {
+  try { milestones.value = await milestoneApi.list() } catch (e) { console.warn('加载失败') }
   timer = setInterval(() => { now.value = Date.now() }, 1000)
 })
 
@@ -75,22 +75,27 @@ onUnmounted(() => {
   clearInterval(timer)
 })
 
-function addMilestone() {
+async function addMilestone() {
   if (!newTitle.value.trim() || !newDate.value) return
-  milestones.value = saveMilestone({
-    title: newTitle.value.trim(),
-    date: newDate.value,
-    icon: newIcon.value || '🎯'
-  })
-  newTitle.value = ''
-  newDate.value = ''
-  newIcon.value = '🎯'
+  try {
+    const created = await milestoneApi.create({
+      title: newTitle.value.trim(),
+      event_date: newDate.value,
+      icon: newIcon.value || '🎯'
+    })
+    milestones.value.unshift(created)
+    newTitle.value = ''
+    newDate.value = ''
+    newIcon.value = '🎯'
+  } catch (e) { alert('添加失败: ' + e.message) }
 }
 
-function removeMilestone(id) {
-  if (confirm('确定要删除这个里程碑吗？')) {
-    milestones.value = deleteMilestone(id)
-  }
+async function removeMilestone(id) {
+  if (!confirm('确定要删除这个里程碑吗？')) return
+  try {
+    await milestoneApi.remove(id)
+    milestones.value = milestones.value.filter(m => m.id !== id)
+  } catch (e) { alert('删除失败: ' + e.message) }
 }
 
 function isToday(dateStr) {

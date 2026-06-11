@@ -108,9 +108,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getCoupleInfo, saveCoupleInfo } from '../utils/storage'
+import { coupleApi } from '../utils/api.js'
 
-const couple = ref(getCoupleInfo())
+const couple = ref({ name1: '🐰 小安', name2: '🐲 小婷子', avatar1: '', avatar2: '', startDate: '2023-06-29' })
 const showSetup = ref(false)
 const form = ref({ ...couple.value })
 const now = ref(Date.now())
@@ -170,13 +170,34 @@ function openSetup() {
   showSetup.value = true
 }
 
-function saveSetup() {
-  couple.value = { ...form.value }
-  saveCoupleInfo(couple.value)
-  showSetup.value = false
+async function saveSetup() {
+  try {
+    const updated = await coupleApi.update({
+      name1: form.value.name1,
+      name2: form.value.name2,
+      startDate: form.value.startDate
+    })
+    couple.value = { ...couple.value, ...updated }
+    showSetup.value = false
+  } catch (e) {
+    alert('保存失败: ' + e.message)
+    // Fallback: save locally
+    couple.value = { ...form.value }
+    showSetup.value = false
+  }
+}
+
+async function loadCoupleInfo() {
+  try {
+    const data = await coupleApi.get()
+    if (data) couple.value = data
+  } catch (e) {
+    console.warn('加载情侣信息失败，使用默认数据')
+  }
 }
 
 onMounted(() => {
+  loadCoupleInfo()
   timer = setInterval(() => {
     now.value = Date.now()
   }, 200)
