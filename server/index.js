@@ -63,14 +63,26 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
+
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err)
   res.status(500).json({ message: '服务器出错了 💔', error: err.message })
 })
+module.exports = app;
 
-app.listen(PORT, () => {
-  console.log(`💕 Couple Site Server running on http://localhost:${PORT}`)
-  console.log(`   API: http://localhost:${PORT}/api`)
-  console.log(`   Uploads: http://localhost:${PORT}/uploads`)
-})
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Couple Site Server running on http://localhost:${PORT}`)
+    console.log(`API: http://localhost:${PORT}/api`)
+    console.log(`Uploads: http://localhost:${PORT}/uploads`)
+  });
+}
+
+// app.listen(PORT, () => {
+//   console.log(`💕 Couple Site Server running on http://localhost:${PORT}`)
+//   console.log(`   API: http://localhost:${PORT}/api`)
+//   console.log(`   Uploads: http://localhost:${PORT}/uploads`)
+// })
